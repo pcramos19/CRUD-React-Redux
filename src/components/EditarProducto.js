@@ -1,87 +1,108 @@
-import React, { useState, useEffect } from 'react';
-import {useDispatch, useSelector} from "react-redux";
-import {editarProductoAction} from "../actions/productoActions"
-import { useHistory} from "react-router-dom";
+import React, {useEffect , Fragment, useRef} from "react";
 
-const EditarProducto = () => {
+// Redux
+import {useDispatch, useSelector} from 'react-redux';
+import {obtenerProductoEditarAction, editarProductoAction} from '../actions/productosAction';
+import {validarFormularioAction, validacionExito, validacionError} from '../actions/validacionAction';
 
-    const dispatch = useDispatch();
-    const history = useHistory();
+const EditarProducto = ({history, match}) => {
 
-    const [producto, guardarProducto] = useState({
-        nombre:"",
-        precio: ""
-    })
+  // Crear los refs
+  const nombreRef = useRef('');
+  const precioRef = useRef('');
 
+  // Dispatch para ejecutar la accion principal
+  const dispatch = useDispatch();
+  const editarProducto = (producto) => dispatch(editarProductoAction(producto));
+  const validarFormulario = () => dispatch(validarFormularioAction());
+  const exitoValidacion = () => dispatch(validacionExito());
+  const errorValidacion = () => dispatch(validacionError());
 
-    const productoeditar = useSelector(state => state.productos.productoeditar)
-    
-    useEffect(() => {
-        guardarProducto(productoeditar)
-    }, [productoeditar])
+  // obtener el ID a editar
+  const { id } = match.params;
 
+  useEffect(() => {
+    dispatch(obtenerProductoEditarAction(id));
+  }, [dispatch, id])
 
-    const onChangeFormulario = e => {
-        guardarProducto({
-            ...producto,
-            [e.target.name]: e.target.value
-        })
+  // Acceder al state
+  const producto = useSelector(state => state.productos.producto);
+  const error = useSelector(state => state.productos.error);
+
+  // Cuando carga la API
+  if (!producto) return 'Cargando...';
+
+  const submitEditarProducto = e => {
+    e.preventDefault();
+
+    // validar formulario
+    validarFormulario();
+    if (nombreRef.current.value.trim() === '' || precioRef.current.value.trim() === '') {
+      errorValidacion();
+      return;
     }
+    // no hay error
+    exitoValidacion();
 
-    const { nombre, precio } = producto;
+    // guardar los cambios
+    editarProducto({
+      id,
+      nombre: nombreRef.current.value,
+      precio: precioRef.current.value
+    });
 
-    const submitEditarProducto = e => {
-        e.preventDefault();
-        
-        dispatch(editarProductoAction(producto));
-        history.push("/")
-    }
-    
+    // redireccionar
+    history.push('/');
+  }
 
-    return (
-        <div className="row justify-content-center">
-            <div className="col-md-8">
-                <div className="card">
-                    <div className="card-body">
-                        <h2 className="text-center mb-4 font-weight-bold">Editar Prducto</h2>
+  return (
+    <Fragment>
+      {error ? 
+        <div className="font-weight alert alert-danger text-center mt-4">Hubo un error, intenta de nuevo</div> 
+      : 
+        <div className="row justify-content-center mt-5">
+          <div className="col-md-8">
+            <div className="card">
+              <div className="card-body">
+                <h2 className="text-center">Editar Producto</h2>
+                <form
+                  onSubmit={submitEditarProducto}
+                >
+                  <div className="form-group">
+                    <label>Titulo</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Titulo"
+                      defaultValue={producto.nombre}
+                      ref={nombreRef}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Precio del Producto</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Precio"
+                      defaultValue={producto.precio}
+                      ref={precioRef}
+                    />
+                  </div>
 
-                        <form
-                            onSubmit={submitEditarProducto}
-                        >
-                            <div>
-                                <label>Nombre Producto</label>
-                                <input 
-                                    type="text" 
-                                    className="form-control"
-                                    placeholder="Nombre Producto"
-                                    name="nombre" 
-                                    value={nombre}
-                                    onChange= {onChangeFormulario}
-                                />
-                            </div>
-
-                            <div>
-                                <label>Precio Producto</label>
-                                <input 
-                                    type="number" 
-                                    className="form-control"
-                                    placeholder="Precio Producto"
-                                    name="precio" 
-                                    value={precio}
-                                    onChange= {onChangeFormulario}
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="btn btn-primary font-weight-bol text-uppercase d-block w-100 mt-4"
-                            >Guardar cambios</button>
-                        </form>
-                    </div>
-                </div>
+                  <button
+                    type="submit"
+                    className="btn btn-primary font-weight-bold text-uppercase d-block w-100"
+                  >
+                    Guardar Cambios
+                  </button>
+                </form>
+              </div>
             </div>
+          </div>
         </div>
-    );
-}
+      }
+    </Fragment>
+  );
+};
 
 export default EditarProducto;
