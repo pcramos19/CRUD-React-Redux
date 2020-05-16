@@ -17,6 +17,7 @@ function App() {
       <Provider store={store}>
         <Header/>
         <div className="container">
+          {/* <img src="../logo_transparent.png" alt=""/> */}
           <Switch>
             <Route exact path="/" component={Productos}/>
             <Route exact path="/productos/nuevo" component={NuevoProducto}/>
